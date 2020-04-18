@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, render_template
+from flask import Flask, request, jsonify, render_template
 import Crypto
 import Crypto.Random
 from Crypto.PublicKey import RSA
@@ -7,8 +7,8 @@ import binascii
 
 class Transaction:
 
-    def __init__(self, sender_address, sender_private_key, recipient_address, value):
-        self.sender_address = sender_address
+    def __init__(self, sender_public_key, sender_private_key, recipient_address, value):
+        self.sender_public_key = sender_public_key
         self.sender_private_key = sender_private_key
         self.recipient_address = recipient_address
         self.value = value
@@ -19,6 +19,14 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+    return render_template('index.html')
+
+
+@app.route('/generate/transaction', methods=['POST'])
+def genrate_transaction():
+    sender_public_key = request.form['sender_public_key']
+    sender_private_key = request.form['sender_private_key']
+    sender_recipient_key = request.form['sender_recipient_key']
     return render_template('index.html')
 
 
