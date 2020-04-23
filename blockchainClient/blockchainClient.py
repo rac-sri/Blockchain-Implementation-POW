@@ -6,9 +6,6 @@ import binascii
 from collections import OrderedDict
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA
-import binascii
-from Crypto.PublicKey import RSA
-from Crypto.Signature import PKCS1_v1_5
 
 
 class Transaction:
@@ -22,23 +19,16 @@ class Transaction:
     def to_dict(self):
         return OrderedDict({
             'sender_public_key': self.sender_public_key,
-            'sender_private_key': self.sender_private_key,
             'recipient_public_key': self.recipient_public_key,
-            'amount': self.amount
+            'amount': self.amount,
         })
-
-    def verify_transaction_signature(self, sender_public_key, signature, transaction):
-        public_key = RSA.importKey(binascii.unhexlify(sender_public_key))
-        verifier = PKCS1_v1_5.new(public_key)
-        h = SHA.new(str(transaction).encode('utf8'))
-        return verifier.verify(h, binsacii.inhexilify(signature))
 
     def sign_transaction(self):
         private_key = RSA.importKey(
             binascii.unhexlify(self.sender_private_key))
         signer = PKCS1_v1_5.new(private_key)
-        SHA(str(self.to_dict()).encode('utf8'))
-        return binascii.hexlify(signer.sign(hash))
+        h = SHA.new(str(self.to_dict()).encode('utf8'))
+        return binascii.hexlify(signer.sign(h)).decode('ascii')
 
 
 app = Flask(__name__)
@@ -50,7 +40,7 @@ def index():
 
 
 @app.route('/generate/transaction', methods=['POST'])
-def genrate_transaction():
+def generate_transaction():
     sender_public_key = request.form['sender_public_key']
     sender_private_key = request.form['sender_private_key']
     recipient_public_key = request.form['recipient_public_key']
@@ -58,6 +48,7 @@ def genrate_transaction():
 
     transaction = Transaction(
         sender_public_key, sender_private_key, recipient_public_key, amount)
+
     response = {'transaction': transaction.to_dict(),
                 'signature': transaction.sign_transaction()}
 

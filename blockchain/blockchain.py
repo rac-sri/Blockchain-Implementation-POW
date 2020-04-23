@@ -42,7 +42,6 @@ class Blockchain:
         except ValueError:
             return False
 
-
     def submit_transaction(self, sender_public_key, recipient_public_key, signature, amount):
         # TODO: Reward the miner
 
@@ -76,6 +75,13 @@ CORS(app)
 @app.route('/')
 def index():
     return render_template('./index.html')
+
+
+@app.route('/transactions/get', methods=['GET'])
+def get_transactions():
+    transactions = blockchain.transactions
+    response = {'transactions': transactions}
+    return jsonify(response), 200
 
 
 @app.route('/transactions/new', methods=['POST'])
