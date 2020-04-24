@@ -24,8 +24,7 @@ class Transaction:
         })
 
     def sign_transaction(self):
-        private_key = RSA.importKey(
-            binascii.unhexlify(self.sender_private_key))
+        private_key = RSA.importKey(binascii.unhexlify(self.sender_private_key))
         signer = PKCS1_v1_5.new(private_key)
         h = SHA.new(str(self.to_dict()).encode('utf8'))
         return binascii.hexlify(signer.sign(h)).decode('ascii')
@@ -46,8 +45,7 @@ def generate_transaction():
     recipient_public_key = request.form['recipient_public_key']
     amount = request.form['amount']
 
-    transaction = Transaction(
-        sender_public_key, sender_private_key, recipient_public_key, amount)
+    transaction = Transaction(sender_public_key, sender_private_key, recipient_public_key, amount)
 
     response = {'transaction': transaction.to_dict(),
                 'signature': transaction.sign_transaction()}
@@ -83,8 +81,7 @@ if __name__ == '__main__':
     from argparse import ArgumentParser
 
     parser = ArgumentParser()
-    parser.add_argument('-p', '--port', default=8081,
-                        type=int, help="port to listen to")
+    parser.add_argument('-p', '--port', default=8081, type=int, help="port to listen to")
     args = parser.parse_args()
     port = args.port
 

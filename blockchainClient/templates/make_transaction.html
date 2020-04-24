@@ -222,10 +222,10 @@
                     header: {'Access-Control-Allow-Origin': '*'},
                     data: $('#confirmation_transaction_form').serialize(),
                     success: function(response) {
-                        $('#sender_public_key').val('');
+                        /*$('#sender_public_key').val('');
                         $('#sender_private_key').val('');
                         $('#recipient_public_key').val('');
-                        $('#amount').val('');
+                        $('#amount').val('');*/
 
                         $('#basic_modal').modal('hide');
                         $('#success_transaction_modal').modal('show');
