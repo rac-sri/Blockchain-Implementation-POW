@@ -75,6 +75,30 @@ class Blockchain:
         h.update(block_string)
         return h.hexdigest()
 
+    def valid_chain(self, chain):
+        last_block = chain[0]
+        current_index = 1
+
+        while current_index < len(chain):
+            block = chain[current_index]
+            if block['previous_hash'] != self.hash(last_block):
+                return False
+
+            transactions = block['transactions'][:-1]
+            transaction_elements = ['sender_public_key',
+                                    'recipient_public_key', 'amount']
+            transactions = [OrderedDict(
+                (k, transaction[k]) for k in transaction_elements) for transaction in transactions]
+
+            if not self.valid_proof(transactions, block['previous_hash'], block['nonce'], MINING_DIFFICULTY):
+                return False
+
+            last_block = block
+            current_index += 1
+
+        return True
+
+    @staticmethod
     def submit_transaction(self, sender_public_key, recipient_public_key, signature, amount):
         transaction = OrderedDict({
             'sender_public_key': sender_public_key,
