@@ -6,8 +6,13 @@ import binascii
 from Crypto.PublicKey import RSA
 from Crypto.Signature import PKCS1_v1_5
 from Crypto.Hash import SHA
+from uuid import uuid4
+import json
+import hashlib
 
-MINING_SENDER = "bLDN"
+MINING_SENDER = "The Blockchain"
+MINING_REWARD = 1
+MINING_DIFFICULTY = 2
 
 
 class Blockchain:
@@ -15,6 +20,7 @@ class Blockchain:
     def __init__(self):
         self.transactions = []
         self.chain = []
+        self.node_id = str(uuid4()).replace('-', '')
         # Create the genesis block
         self.create_block(0, '00')
 
@@ -31,6 +37,7 @@ class Blockchain:
         # Reset the current list of transactions
         self.transactions = []
         self.chain.append(block)
+        return block
 
     def verify_transaction_signature(self, sender_public_key, signature, transaction):
         public_key = RSA.importKey(binascii.unhexlify(sender_public_key))
@@ -42,26 +49,52 @@ class Blockchain:
         except ValueError:
             return False
 
-    def submit_transaction(self, sender_public_key, recipient_public_key, signature, amount):
-        # TODO: Reward the miner
+    @staticmethod
+    def valid_proof(transactions, last_hash, nonce, difficulty=MINING_DIFFICULTY):
+        guess = (str(transactions) + str(last_hash) +
+                 str(nonce)).encode('utf8')
+        h = hashlib.new('sha256')
+        h.update(guess)
+        guess_hash = h.hexdigest()
+        return guess_hash[:difficulty] == '0' * difficulty
 
+    def proof_of_work(self):
+        last_block = self.chain[-1]
+        last_hash = self.hash(last_block)
+        nonce = 0
+        while self.valid_proof(self.transactions, last_hash, nonce) is False:
+            nonce += 1
+
+        return nonce
+
+    @staticmethod
+    def hash(block):
+        # We must to ensure that the Dictionary is ordered, otherwise we'll get inconsistent hashes
+        block_string = json.dumps(block, sort_keys=True).encode('utf8')
+        h = hashlib.new('sha256')
+        h.update(block_string)
+        return h.hexdigest()
+
+    def submit_transaction(self, sender_public_key, recipient_public_key, signature, amount):
         transaction = OrderedDict({
             'sender_public_key': sender_public_key,
             'recipient_public_key': recipient_public_key,
             'amount': amount
         })
 
+        # Reward for mining a block
         if sender_public_key == MINING_SENDER:
-            self.transactions.append(transaction)
-            return len(self.chain)
-
-        signature_verification = self.verify_transaction_signature(
-            sender_public_key, signature, transaction)
-        if signature_verification:
             self.transactions.append(transaction)
             return len(self.chain) + 1
         else:
-            return False
+            # Transaction from wallet to another wallet
+            signature_verification = self.verify_transaction_signature(
+                sender_public_key, signature, transaction)
+            if signature_verification:
+                self.transactions.append(transaction)
+                return len(self.chain) + 1
+            else:
+                return False
 
 
 # Instantiate the Blockchain
@@ -84,13 +117,45 @@ def get_transactions():
     return jsonify(response), 200
 
 
+@app.route('/chain', methods=['GET'])
+def get_chain():
+    response = {
+        'chain': blockchain.chain,
+        'length': len(blockchain.chain)
+    }
+
+    return jsonify(response), 200
+
+
+@app.route('/mine', methods=['GET'])
+def mine():
+    # We run the proof of work algorithm
+    nonce = blockchain.proof_of_work()
+
+    blockchain.submit_transaction(sender_public_key=MINING_SENDER,
+                                  recipient_public_key=blockchain.node_id,
+                                  signature='',
+                                  amount=MINING_REWARD)
+
+    last_block = blockchain.chain[-1]
+    previous_hash = blockchain.hash(last_block)
+    block = blockchain.create_block(nonce, previous_hash)
+
+    response = {
+        'message': 'New block created',
+        'block_number': block['block_number'],
+        'transactions': block['transactions'],
+        'nonce': block['nonce'],
+        'previous_hash': block['previous_hash'],
+    }
+    return jsonify(response), 200
+
+
 @app.route('/transactions/new', methods=['POST'])
 def new_transaction():
     values = request.form
-    # TODO: check the required fields
-
-    required = ['confirmation_sender_public_key', 'confirmation_recipient_public_key',
-                'transaction_signature', 'confirmation_amount']
+    required = ['confirmation_sender_public_key', 'confirmation_recipient_public_key', 'transaction_signature',
+                'confirmation_amount']
     if not all(k in values for k in required):
         return 'Missing values', 400
 
