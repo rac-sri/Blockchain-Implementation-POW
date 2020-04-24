@@ -8,20 +8,25 @@ A simple implementation of Blockchain system.
 * Javascript
 * JQuery,Ajax
 * pycryptodome library
+* Python 3.8
 
 ### Installation
 
 1. Install dependencies
  ```
-  python3 install requirements.txt
+ 1. cd blockchain
+    -python install -r requirements.txt
+
+ 2. cd blockchainClient
+    -python install -r requirements.txt
  ```
 2. Go to blockchain folder (create as many required number of nodes you desire)
  ```
-  python3 blockchain.py -p 5001
+  python blockchain.py -p 5001
  ```
 3. Create clients, go to blockchain client drectory.(Create as many required clients you require)
  ```
- python3 blockchainclient.py -p 8001
+ python blockchainclient.py -p 8001
 ```
 
 ### Demostration
